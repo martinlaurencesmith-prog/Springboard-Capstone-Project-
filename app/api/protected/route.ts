@@ -1,7 +1,7 @@
 // api/protected/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
-import { withAuth } from "@/lib/auth";
+import { withAuth } from "@/lib/withAuth";
 
 export async function GET(request: NextRequest) {
   const auth = await withAuth(request, ["admin", "staff"]);
