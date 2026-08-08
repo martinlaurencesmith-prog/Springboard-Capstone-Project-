@@ -56,4 +56,8 @@ app/
 components/
 lib/                  # db, auth, withAuth helpers
 models/               # User, Order schemas
+
+## Capstone Documentation
+
+Planning documents are available in the `/docs` folder. Each step is outlined from beginning to completion. 
 ```
