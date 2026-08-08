@@ -57,3 +57,4 @@ components/
 lib/                  # db, auth, withAuth helpers
 models/               # User, Order schemas
 ```
+
