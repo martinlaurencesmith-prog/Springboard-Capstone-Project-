@@ -1,4 +1,4 @@
-//app/staff/orders/[id]/page.tsx
+// app/staff/orders/[id]/page.tsx
 
 "use client";
 
@@ -76,6 +76,19 @@ export default function OrderDetailsPage() {
   const [paymentStatus, setPaymentStatus] = useState("partially-received");
   const [isUpdatingPayment, setIsUpdatingPayment] = useState(false);
 
+  // Edit order details
+  const [isEditingDetails, setIsEditingDetails] = useState(false);
+  const [isSavingDetails, setIsSavingDetails] = useState(false);
+  const [businessNIT, setBusinessNIT] = useState("");
+  const [businessName, setBusinessName] = useState("");
+  const [bookIdentification, setBookIdentification] = useState("");
+  const [quantity, setQuantity] = useState<number | "">("");
+  const [spiralLength, setSpiralLength] = useState<number | "">("");
+  const [sheetsPerBook, setSheetsPerBook] = useState<number | "">("");
+  const [bindingType, setBindingType] = useState("metallic");
+  const [spiralColor, setSpiralColor] = useState("");
+  const [additionalNotes, setAdditionalNotes] = useState("");
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
@@ -110,8 +123,19 @@ export default function OrderDetailsPage() {
         throw new Error(result.error || "Failed to fetch order");
       }
 
-      setOrder(result.data);
-      setStatus(result.data.status);
+      const data = result.data;
+      setOrder(data);
+      setStatus(data.status);
+
+      setBusinessNIT(data.businessNIT || "");
+      setBusinessName(data.businessName || "");
+      setBookIdentification(data.book?.identification || "");
+      setQuantity(data.specifications?.quantity ?? "");
+      setSpiralLength(data.specifications?.spiralLength ?? "");
+      setSheetsPerBook(data.specifications?.sheetsPerBook ?? "");
+      setBindingType(data.specifications?.bindingType || "metallic");
+      setSpiralColor(data.specifications?.spiralColor || "");
+      setAdditionalNotes(data.specifications?.additionalNotes || "");
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -248,6 +272,7 @@ export default function OrderDetailsPage() {
       toast.error(error.message || "Failed to delete order");
     }
   };
+
   const handlePaymentUpdate = async () => {
     if (paymentAmount === "" || Number(paymentAmount) <= 0) {
       toast.error("Please enter a valid payment amount");
@@ -287,6 +312,63 @@ export default function OrderDetailsPage() {
     }
   };
 
+  const handleUpdateDetails = async () => {
+    if (
+      !bookIdentification ||
+      !businessNIT ||
+      quantity === "" ||
+      spiralLength === "" ||
+      !bindingType
+    ) {
+      toast.error("Please fill in the required order details");
+      return;
+    }
+
+    setIsSavingDetails(true);
+
+    try {
+      const token = localStorage.getItem("token");
+
+      const response = await fetch(`/api/orders/${orderId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          businessNIT,
+          businessName,
+          book: {
+            identification: bookIdentification,
+            coverImage: order?.book?.coverImage || "",
+          },
+          specifications: {
+            quantity: Number(quantity),
+            spiralLength: Number(spiralLength),
+            sheetsPerBook: sheetsPerBook === "" ? null : Number(sheetsPerBook),
+            bindingType,
+            spiralColor: spiralColor || null,
+            additionalNotes: additionalNotes || "",
+          },
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to update order details");
+      }
+
+      setOrder(result.data);
+      setIsEditingDetails(false);
+      toast.success("Order details updated successfully");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update order details");
+    } finally {
+      setIsSavingDetails(false);
+    }
+  };
+
   const getStatusColor = (value: string) => {
     switch (value) {
       case "pending":
@@ -322,6 +404,9 @@ export default function OrderDetailsPage() {
     );
   }
 
+  const canEditDetails =
+    Date.now() - new Date(order.createdAt).getTime() < 24 * 60 * 60 * 1000;
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm">
@@ -330,19 +415,22 @@ export default function OrderDetailsPage() {
             <h1 className="text-xl font-bold">Order Details</h1>
             <p className="text-sm text-gray-500">ID: {order._id}</p>
           </div>
-          <Link
-            href="/staff/dashboard"
-            className="text-sm text-blue-600 hover:underline"
-          >
-            ← Back to Dashboard
-          </Link>
 
-          <button
-            onClick={handleDeleteOrder}
-            className="px-3 py-2 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600"
-          >
-            Delete Order
-          </button>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/staff/dashboard"
+              className="text-sm text-blue-600 hover:underline"
+            >
+              ← Back to Dashboard
+            </Link>
+
+            <button
+              onClick={handleDeleteOrder}
+              className="px-3 py-2 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600"
+            >
+              Delete Order
+            </button>
+          </div>
         </div>
       </header>
 
@@ -355,7 +443,9 @@ export default function OrderDetailsPage() {
                 {order.book.identification}
               </h2>
               <span
-                className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}
+                className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                  order.status,
+                )}`}
               >
                 {order.status}
               </span>
@@ -385,59 +475,226 @@ export default function OrderDetailsPage() {
           </div>
         </div>
 
-        {/* Client Info */}
+        {/* Edit Order Details */}
         <div className="bg-white rounded-xl shadow-sm p-6">
-          <h3 className="font-semibold mb-3">Client Information</h3>
-          <p className="text-sm text-gray-600">
-            <span className="font-medium">Business NIT:</span>{" "}
-            {order.businessNIT}
-          </p>
-          {order.businessName && (
-            <p className="text-sm text-gray-600 mt-1">
-              <span className="font-medium">Business Name:</span>{" "}
-              {order.businessName}
-            </p>
-          )}
-          <p className="text-sm text-gray-600 mt-1">
-            <span className="font-medium">Created:</span>{" "}
-            {new Date(order.createdAt).toLocaleDateString()}
-          </p>
-        </div>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-semibold">Order Details</h3>
 
-        {/* Specifications */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h3 className="font-semibold mb-3">Specifications</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-600">
-            <p>
-              <span className="font-medium">Quantity:</span>{" "}
-              {order.specifications.quantity}
-            </p>
-            <p>
-              <span className="font-medium">Spiral Length:</span>{" "}
-              {order.specifications.spiralLength}
-            </p>
-            <p>
-              <span className="font-medium">Binding Type:</span>{" "}
-              {order.specifications.bindingType}
-            </p>
-            {order.specifications.spiralColor && (
-              <p>
-                <span className="font-medium">Spiral Color:</span>{" "}
-                {order.specifications.spiralColor}
-              </p>
-            )}
-            {order.specifications.sheetsPerBook && (
-              <p>
-                <span className="font-medium">Sheets per Book:</span>{" "}
-                {order.specifications.sheetsPerBook}
+            {canEditDetails ? (
+              <button
+                onClick={() => setIsEditingDetails((prev) => !prev)}
+                className="text-sm text-blue-600 hover:underline"
+              >
+                {isEditingDetails ? "Cancel" : "Edit Details"}
+              </button>
+            ) : (
+              <p className="text-xs text-gray-400">
+                Editing locked after 24 hours
               </p>
             )}
           </div>
-          {order.specifications.additionalNotes && (
-            <p className="text-sm text-gray-600 mt-3">
-              <span className="font-medium">Notes:</span>{" "}
-              {order.specifications.additionalNotes}
-            </p>
+
+          {!isEditingDetails ? (
+            <div className="text-sm text-gray-600 space-y-1">
+              <p>
+                <span className="font-medium">Title:</span>{" "}
+                {order.book.identification}
+              </p>
+              <p>
+                <span className="font-medium">Business NIT:</span>{" "}
+                {order.businessNIT}
+              </p>
+              {order.businessName && (
+                <p>
+                  <span className="font-medium">Business Name:</span>{" "}
+                  {order.businessName}
+                </p>
+              )}
+              <p>
+                <span className="font-medium">Quantity:</span>{" "}
+                {order.specifications.quantity}
+              </p>
+              <p>
+                <span className="font-medium">Spiral Length:</span>{" "}
+                {order.specifications.spiralLength}
+              </p>
+              <p>
+                <span className="font-medium">Binding:</span>{" "}
+                {order.specifications.bindingType}
+              </p>
+              {order.specifications.spiralColor && (
+                <p>
+                  <span className="font-medium">Spiral Color:</span>{" "}
+                  {order.specifications.spiralColor}
+                </p>
+              )}
+              {order.specifications.sheetsPerBook && (
+                <p>
+                  <span className="font-medium">Sheets per Book:</span>{" "}
+                  {order.specifications.sheetsPerBook}
+                </p>
+              )}
+              {order.specifications.additionalNotes && (
+                <p>
+                  <span className="font-medium">Notes:</span>{" "}
+                  {order.specifications.additionalNotes}
+                </p>
+              )}
+              <p>
+                <span className="font-medium">Created:</span>{" "}
+                {new Date(order.createdAt).toLocaleDateString()}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Book / Job Title *
+                </label>
+                <input
+                  type="text"
+                  value={bookIdentification}
+                  onChange={(e) => setBookIdentification(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Business NIT *
+                </label>
+                <input
+                  type="text"
+                  value={businessNIT}
+                  onChange={(e) => setBusinessNIT(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Business Name
+                </label>
+                <input
+                  type="text"
+                  value={businessName}
+                  onChange={(e) => setBusinessName(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg text-sm"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Quantity *
+                  </label>
+                  <input
+                    type="number"
+                    value={quantity}
+                    onChange={(e) =>
+                      setQuantity(
+                        e.target.value === "" ? "" : Number(e.target.value),
+                      )
+                    }
+                    className="w-full px-3 py-2 border rounded-lg text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Spiral Length *
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={spiralLength}
+                    onChange={(e) =>
+                      setSpiralLength(
+                        e.target.value === "" ? "" : Number(e.target.value),
+                      )
+                    }
+                    className="w-full px-3 py-2 border rounded-lg text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Sheets per Book
+                  </label>
+                  <input
+                    type="number"
+                    value={sheetsPerBook}
+                    onChange={(e) =>
+                      setSheetsPerBook(
+                        e.target.value === "" ? "" : Number(e.target.value),
+                      )
+                    }
+                    className="w-full px-3 py-2 border rounded-lg text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Binding Type *
+                  </label>
+                  <select
+                    value={bindingType}
+                    onChange={(e) => setBindingType(e.target.value)}
+                    className="w-full px-3 py-2 border rounded-lg text-sm"
+                  >
+                    <option value="metallic">Metallic</option>
+                    <option value="plastic">Plastic</option>
+                    <option value="metallic-hook">Metallic Hook</option>
+                    <option value="hardbound">Hardbound</option>
+                    <option value="softbound">Softbound</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Spiral Color
+                </label>
+                <select
+                  value={spiralColor}
+                  onChange={(e) => setSpiralColor(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg text-sm"
+                >
+                  <option value="">Select color</option>
+                  <option value="black">Black</option>
+                  <option value="white">White</option>
+                  <option value="silver">Silver</option>
+                  <option value="clear">Clear</option>
+                  <option value="gold">Gold</option>
+                  <option value="rose-gold">Rose Gold</option>
+                  <option value="red">Red</option>
+                  <option value="green">Green</option>
+                  <option value="blue">Blue</option>
+                  <option value="custom">Custom</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Additional Notes
+                </label>
+                <textarea
+                  value={additionalNotes}
+                  onChange={(e) => setAdditionalNotes(e.target.value)}
+                  rows={3}
+                  className="w-full px-3 py-2 border rounded-lg text-sm"
+                />
+              </div>
+
+              <button
+                onClick={handleUpdateDetails}
+                disabled={isSavingDetails}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50"
+              >
+                {isSavingDetails ? "Saving..." : "Save Order Details"}
+              </button>
+            </div>
           )}
         </div>
 

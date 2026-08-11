@@ -1,4 +1,4 @@
-//app/staff/dashboard/page.tsx
+// app/staff/dashboard/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -35,6 +35,9 @@ export default function StaffDashBoard() {
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [statusFilter, setStatusFilter] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const limit = 10;
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -64,14 +67,18 @@ export default function StaffDashBoard() {
     }
 
     setUser(parsedUser);
-    fetchOrders(token, statusFilter);
-  }, [router, statusFilter]);
+    fetchOrders(token, statusFilter, page);
+  }, [router, statusFilter, page]);
 
-  const fetchOrders = async (token: string, status: string) => {
+  const fetchOrders = async (
+    token: string,
+    status: string,
+    currentPage: number,
+  ) => {
     setIsLoading(true);
 
     try {
-      let url = "/api/orders?limit=50";
+      let url = `/api/orders?page=${currentPage}&limit=${limit}`;
       if (status) {
         url += `&status=${status}`;
       }
@@ -89,6 +96,7 @@ export default function StaffDashBoard() {
       }
 
       setOrders(result.data || []);
+      setTotalPages(result.pagination?.totalPages || 1);
     } catch (error: any) {
       toast.error(error.message || "Failed to fetch orders");
     } finally {
@@ -142,12 +150,21 @@ export default function StaffDashBoard() {
             </p>
           </div>
 
-          <button
-            onClick={handleLogout}
-            className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
-          >
-            Logout
-          </button>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/profile"
+              className="text-sm text-blue-600 hover:underline"
+            >
+              Profile
+            </Link>
+
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
+            >
+              Logout
+            </button>
+          </div>
         </div>
       </header>
 
@@ -160,7 +177,10 @@ export default function StaffDashBoard() {
             {/* Status Filter */}
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => {
+                setPage(1);
+                setStatusFilter(e.target.value);
+              }}
               className="px-3 py-2 border rounded-lg text-sm"
             >
               <option value="">All Statuses</option>
@@ -234,6 +254,31 @@ export default function StaffDashBoard() {
                 )}
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-6 flex items-center justify-center gap-4">
+            <button
+              onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+              disabled={page === 1}
+              className="px-4 py-2 border rounded-lg text-sm disabled:opacity-50"
+            >
+              Previous
+            </button>
+
+            <span className="text-sm text-gray-600">
+              Page {page} of {totalPages}
+            </span>
+
+            <button
+              onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+              disabled={page === totalPages}
+              className="px-4 py-2 border rounded-lg text-sm disabled:opacity-50"
+            >
+              Next
+            </button>
           </div>
         )}
       </main>

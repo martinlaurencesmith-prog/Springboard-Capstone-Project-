@@ -1,4 +1,4 @@
-//app/client/dashboard/page.tsx
+// app/client/dashboard/page.tsx
 
 "use client";
 
@@ -113,12 +113,22 @@ export default function ClientDashboard() {
               Welcome, {user?.name || "Client"}
             </p>
           </div>
-          <button
-            onClick={handleLogout}
-            className="px-4 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600"
-          >
-            Logout
-          </button>
+
+          <div className="flex items-center gap-3">
+            <Link
+              href="/profile"
+              className="text-sm text-blue-600 hover:underline"
+            >
+              Profile
+            </Link>
+
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600"
+            >
+              Logout
+            </button>
+          </div>
         </div>
       </header>
 
