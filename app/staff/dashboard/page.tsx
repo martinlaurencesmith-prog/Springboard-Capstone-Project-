@@ -29,6 +29,16 @@ interface Order {
   };
 }
 
+interface DashboardStats {
+  totalOrders: number;
+  pending: number;
+  inProgress: number;
+  completed: number;
+  delivered: number;
+  cancelled: number;
+  partiallyDelivered: number;
+}
+
 export default function StaffDashBoard() {
   const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
@@ -38,6 +48,16 @@ export default function StaffDashBoard() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const limit = 10;
+
+  const [stats, setStats] = useState<DashboardStats>({
+    totalOrders: 0,
+    pending: 0,
+    inProgress: 0,
+    completed: 0,
+    delivered: 0,
+    cancelled: 0,
+    partiallyDelivered: 0,
+  });
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -67,8 +87,29 @@ export default function StaffDashBoard() {
     }
 
     setUser(parsedUser);
+    fetchStats(token);
     fetchOrders(token, statusFilter, page);
   }, [router, statusFilter, page]);
+
+  const fetchStats = async (token: string) => {
+    try {
+      const response = await fetch("/api/orders/stats", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to fetch stats");
+      }
+
+      setStats(result.data);
+    } catch (error: any) {
+      console.error(error.message || "Failed to fetch stats");
+    }
+  };
 
   const fetchOrders = async (
     token: string,
@@ -130,10 +171,10 @@ export default function StaffDashBoard() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading && orders.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-lg font-semibold">Loading orders...</p>
+        <p className="text-lg font-semibold">Loading dashboard...</p>
       </div>
     );
   }
@@ -144,7 +185,7 @@ export default function StaffDashBoard() {
       <header className="bg-white shadow-sm">
         <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
           <div>
-            <h1 className="text-xl font-bold">BindFlow - Staff Panel</h1>
+            <h1 className="text-xl font-bold">BindFlow - Staff Dashboard</h1>
             <p className="text-sm text-gray-500">
               Welcome, {user?.name} ({user?.role})
             </p>
@@ -170,18 +211,68 @@ export default function StaffDashBoard() {
 
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-4 py-8">
+        {/* Compact stats card */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 w-full max-w-xs">
+          <div className="px-4 py-3 border-b border-gray-100">
+            <h3 className="text-sm font-semibold text-gray-800">Overview</h3>
+          </div>
+
+          <div className="px-4 py-2">
+            <div className="flex justify-between py-1.5 text-sm">
+              <span className="text-gray-500">Total</span>
+              <span className="font-medium">{stats.totalOrders}</span>
+            </div>
+            <div className="flex justify-between py-1.5 text-sm">
+              <span className="text-gray-500">Pending</span>
+              <span className="font-medium text-yellow-700">
+                {stats.pending}
+              </span>
+            </div>
+            <div className="flex justify-between py-1.5 text-sm">
+              <span className="text-gray-500">In Progress</span>
+              <span className="font-medium text-blue-700">
+                {stats.inProgress}
+              </span>
+            </div>
+            <div className="flex justify-between py-1.5 text-sm">
+              <span className="text-gray-500">Completed</span>
+              <span className="font-medium text-indigo-700">
+                {stats.completed}
+              </span>
+            </div>
+            <div className="flex justify-between py-1.5 text-sm">
+              <span className="text-gray-500">Partial</span>
+              <span className="font-medium text-purple-700">
+                {stats.partiallyDelivered}
+              </span>
+            </div>
+            <div className="flex justify-between py-1.5 text-sm">
+              <span className="text-gray-500">Delivered</span>
+              <span className="font-medium text-green-700">
+                {stats.delivered}
+              </span>
+            </div>
+            <div className="flex justify-between py-1.5 text-sm">
+              <span className="text-gray-500">Cancelled</span>
+              <span className="font-medium text-red-700">
+                {stats.cancelled}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Toolbar */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <h2 className="text-2xl font-bold">All Orders</h2>
+          <h2 className="text-2xl font-bold">Orders</h2>
 
           <div className="flex gap-3">
-            {/* Status Filter */}
             <select
               value={statusFilter}
               onChange={(e) => {
                 setPage(1);
                 setStatusFilter(e.target.value);
               }}
-              className="px-3 py-2 border rounded-lg text-sm"
+              className="px-3 py-2 border rounded-lg text-sm bg-white"
             >
               <option value="">All Statuses</option>
               <option value="pending">Pending</option>
@@ -192,7 +283,6 @@ export default function StaffDashBoard() {
               <option value="delivered">Delivered</option>
             </select>
 
-            {/* Create New Order Button */}
             <Link
               href="/staff/new-order"
               className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition text-sm"
@@ -202,56 +292,58 @@ export default function StaffDashBoard() {
           </div>
         </div>
 
+        {/* Orders Grid */}
         {orders.length === 0 ? (
           <div className="bg-white rounded-xl shadow-sm p-8 text-center">
             <p className="text-gray-500">No orders found.</p>
           </div>
         ) : (
-          <div className="grid gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {orders.map((order) => (
               <div
                 key={order._id}
-                className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition"
+                className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition flex flex-col justify-between"
               >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="text-lg font-semibold">
+                <div>
+                  <div className="flex justify-between items-start gap-3 mb-3">
+                    <h3 className="text-lg font-semibold leading-snug">
                       {order.book.identification}
                     </h3>
-
-                    <p className="text-sm text-gray-500 mt-1">
-                      NIT: {order.businessNIT} | Qty:{" "}
-                      {order.specifications.quantity} | Binding:{" "}
-                      {order.specifications.bindingType}
-                    </p>
-                    <p className="text-sm text-gray-500 mt-1">
-                      Created: {new Date(order.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
-
-                  <div className="flex flex-col items-end gap-2">
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                      className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getStatusColor(
                         order.status,
                       )}`}
                     >
                       {order.status}
                     </span>
-
-                    <Link
-                      href={`/staff/orders/${order._id}`}
-                      className="text-sm text-blue-600 hover:underline"
-                    >
-                      View Details →
-                    </Link>
                   </div>
+
+                  <p className="text-sm text-gray-500">
+                    NIT: {order.businessNIT}
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Qty: {order.specifications.quantity} | Binding:{" "}
+                    {order.specifications.bindingType}
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Created: {new Date(order.createdAt).toLocaleDateString()}
+                  </p>
+
+                  {order.quote?.totalPrice && (
+                    <p className="mt-3 text-sm font-medium text-gray-700">
+                      Quote: ${order.quote.totalPrice.toLocaleString()}
+                    </p>
+                  )}
                 </div>
 
-                {order.quote?.totalPrice && (
-                  <p className="mt-3 text-sm font-medium text-gray-700">
-                    Quote: ${order.quote.totalPrice.toLocaleString()}
-                  </p>
-                )}
+                <div className="mt-4 pt-3 border-t">
+                  <Link
+                    href={`/staff/orders/${order._id}`}
+                    className="text-sm text-blue-600 hover:underline"
+                  >
+                    View Details →
+                  </Link>
+                </div>
               </div>
             ))}
           </div>
@@ -263,7 +355,7 @@ export default function StaffDashBoard() {
             <button
               onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
               disabled={page === 1}
-              className="px-4 py-2 border rounded-lg text-sm disabled:opacity-50"
+              className="px-4 py-2 border rounded-lg text-sm disabled:opacity-50 bg-white"
             >
               Previous
             </button>
@@ -275,7 +367,7 @@ export default function StaffDashBoard() {
             <button
               onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
               disabled={page === totalPages}
-              className="px-4 py-2 border rounded-lg text-sm disabled:opacity-50"
+              className="px-4 py-2 border rounded-lg text-sm disabled:opacity-50 bg-white"
             >
               Next
             </button>
