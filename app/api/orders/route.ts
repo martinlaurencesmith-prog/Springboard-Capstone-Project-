@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
     const businessNIT = searchParams.get("businessNIT") || null;
     const fromDate = searchParams.get("fromDate") || null;
     const toDate = searchParams.get("toDate") || null;
+    const search = searchParams.get("search")?.trim() || null;
 
     const filter: any = {};
 
@@ -41,6 +42,16 @@ export async function GET(request: NextRequest) {
       if (toDate) {
         filter.createdAt.$lte = new Date(toDate);
       }
+    }
+
+    if (search) {
+      const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const regex = { $regex: escaped, $options: "i" };
+      filter.$or = [
+        { businessNIT: regex },
+        { businessName: regex },
+        { "book.identification": regex },
+      ];
     }
 
     const skip = (page - 1) * limit;
@@ -65,6 +76,7 @@ export async function GET(request: NextRequest) {
         businessNIT: businessNIT || null,
         fromDate: fromDate || null,
         toDate: toDate || null,
+        search: search || null,
       },
       data: orders,
     });
@@ -81,7 +93,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST function to create a new order
 export async function POST(request: NextRequest) {
   const auth = await withAuth(request, ["staff", "admin"]);
 
@@ -108,14 +119,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Try to find registered client by NIT
     const clientUser = await User.findOne({
       businessNIT,
       role: "client",
     });
 
     const newOrder = await Order.create({
-      ...(clientUser ? { client: clientUser._id } : {}), // assign only if registered
+      ...(clientUser ? { client: clientUser._id } : {}),
       businessNIT,
       businessName: businessName || clientUser?.businessName || "",
       book: {
