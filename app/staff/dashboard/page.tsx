@@ -45,6 +45,8 @@ export default function StaffDashBoard() {
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [statusFilter, setStatusFilter] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const limit = 10;
@@ -88,8 +90,8 @@ export default function StaffDashBoard() {
 
     setUser(parsedUser);
     fetchStats(token);
-    fetchOrders(token, statusFilter, page);
-  }, [router, statusFilter, page]);
+    fetchOrders(token, statusFilter, page, searchQuery);
+  }, [router, statusFilter, page, searchQuery]);
 
   const fetchStats = async (token: string) => {
     try {
@@ -115,16 +117,20 @@ export default function StaffDashBoard() {
     token: string,
     status: string,
     currentPage: number,
+    search: string,
   ) => {
     setIsLoading(true);
 
     try {
-      let url = `/api/orders?page=${currentPage}&limit=${limit}`;
-      if (status) {
-        url += `&status=${status}`;
-      }
+      const params = new URLSearchParams({
+        page: String(currentPage),
+        limit: String(limit),
+      });
 
-      const response = await fetch(url, {
+      if (status) params.set("status", status);
+      if (search) params.set("search", search);
+
+      const response = await fetch(`/api/orders?${params.toString()}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -145,6 +151,12 @@ export default function StaffDashBoard() {
     }
   };
 
+  const applySearch = (event: React.FormEvent) => {
+    event.preventDefault();
+    setPage(1);
+    setSearchQuery(searchInput.trim());
+  };
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
@@ -155,53 +167,70 @@ export default function StaffDashBoard() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "pending":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-amber-100 text-amber-800";
       case "in-progress":
-        return "bg-blue-100 text-blue-800";
+        return "bg-sky-100 text-sky-800";
       case "completed":
-        return "bg-green-100 text-green-800";
+        return "bg-indigo-100 text-indigo-800";
       case "cancelled":
         return "bg-red-100 text-red-800";
       case "partially-delivered":
-        return "bg-purple-100 text-purple-800";
+        return "bg-violet-100 text-violet-800";
       case "delivered":
-        return "bg-green-100 text-green-800";
+        return "bg-emerald-100 text-emerald-800";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-[#E8DFD0] text-[#1F1A16]";
     }
   };
 
   if (isLoading && orders.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-lg font-semibold">Loading dashboard...</p>
+      <div className="min-h-screen flex items-center justify-center bg-[#F4EFE6] text-[#1F1A16]">
+        <p className="text-lg font-medium">Loading dashboard...</p>
       </div>
     );
   }
 
+  const statTiles = [
+    { label: "Total", value: stats.totalOrders, color: "text-[#1F1A16]" },
+    { label: "Pending", value: stats.pending, color: "text-amber-700" },
+    { label: "In Progress", value: stats.inProgress, color: "text-sky-800" },
+    { label: "Completed", value: stats.completed, color: "text-indigo-800" },
+    {
+      label: "Partial",
+      value: stats.partiallyDelivered,
+      color: "text-violet-800",
+    },
+    { label: "Delivered", value: stats.delivered, color: "text-emerald-800" },
+    { label: "Cancelled", value: stats.cancelled, color: "text-red-800" },
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
+    <div className="min-h-screen bg-[#F4EFE6] text-[#1F1A16]">
+      <header className="sticky top-0 z-10 bg-[#FFFCF7]/90 border-b border-[#DDD4C6] backdrop-blur-sm">
         <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div>
-            <h1 className="text-xl font-bold">BindFlow - Staff Dashboard</h1>
-            <p className="text-sm text-gray-500">
-              Welcome, {user?.name} ({user?.role})
-            </p>
+          <div className="flex items-center gap-3">
+            <span className="h-8 w-8 rounded-lg bg-[#9A3412] text-white grid place-items-center text-sm font-bold">
+              B
+            </span>
+            <div>
+              <h1 className="text-xl font-semibold">Staff Dashboard</h1>
+              <p className="text-sm text-[#6B6258]">
+                Welcome, {user?.name} ({user?.role})
+              </p>
+            </div>
           </div>
 
           <div className="flex items-center gap-3">
             <Link
               href="/profile"
-              className="text-sm text-blue-600 hover:underline"
+              className="text-sm font-medium text-[#9A3412] hover:underline"
             >
               Profile
             </Link>
-
             <button
               onClick={handleLogout}
-              className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
+              className="px-4 py-2 text-sm font-semibold bg-[#B91C1C] text-white rounded-xl hover:bg-[#991B1B] transition"
             >
               Logout
             </button>
@@ -209,100 +238,92 @@ export default function StaffDashBoard() {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="max-w-6xl mx-auto px-4 py-8">
-        {/* Compact stats card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 w-full max-w-xs">
-          <div className="px-4 py-3 border-b border-gray-100">
-            <h3 className="text-sm font-semibold text-gray-800">Overview</h3>
-          </div>
-
-          <div className="px-4 py-2">
-            <div className="flex justify-between py-1.5 text-sm">
-              <span className="text-gray-500">Total</span>
-              <span className="font-medium">{stats.totalOrders}</span>
+        <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3 mb-8">
+          {statTiles.map((tile) => (
+            <div
+              key={tile.label}
+              className="bg-[#FFFCF7] border border-[#DDD4C6] rounded-2xl px-4 py-3 shadow-sm"
+            >
+              <p className="text-xs text-[#6B6258]">{tile.label}</p>
+              <p className={`text-2xl font-semibold mt-1 ${tile.color}`}>
+                {tile.value}
+              </p>
             </div>
-            <div className="flex justify-between py-1.5 text-sm">
-              <span className="text-gray-500">Pending</span>
-              <span className="font-medium text-yellow-700">
-                {stats.pending}
-              </span>
-            </div>
-            <div className="flex justify-between py-1.5 text-sm">
-              <span className="text-gray-500">In Progress</span>
-              <span className="font-medium text-blue-700">
-                {stats.inProgress}
-              </span>
-            </div>
-            <div className="flex justify-between py-1.5 text-sm">
-              <span className="text-gray-500">Completed</span>
-              <span className="font-medium text-indigo-700">
-                {stats.completed}
-              </span>
-            </div>
-            <div className="flex justify-between py-1.5 text-sm">
-              <span className="text-gray-500">Partial</span>
-              <span className="font-medium text-purple-700">
-                {stats.partiallyDelivered}
-              </span>
-            </div>
-            <div className="flex justify-between py-1.5 text-sm">
-              <span className="text-gray-500">Delivered</span>
-              <span className="font-medium text-green-700">
-                {stats.delivered}
-              </span>
-            </div>
-            <div className="flex justify-between py-1.5 text-sm">
-              <span className="text-gray-500">Cancelled</span>
-              <span className="font-medium text-red-700">
-                {stats.cancelled}
-              </span>
-            </div>
-          </div>
+          ))}
         </div>
 
-        {/* Toolbar */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <h2 className="text-2xl font-bold">Orders</h2>
+        <div className="flex flex-col gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <h2 className="text-2xl font-semibold">Orders</h2>
 
-          <div className="flex gap-3">
-            <select
-              value={statusFilter}
-              onChange={(e) => {
-                setPage(1);
-                setStatusFilter(e.target.value);
-              }}
-              className="px-3 py-2 border rounded-lg text-sm bg-white"
-            >
-              <option value="">All Statuses</option>
-              <option value="pending">Pending</option>
-              <option value="in-progress">In Progress</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
-              <option value="partially-delivered">Partially Delivered</option>
-              <option value="delivered">Delivered</option>
-            </select>
+            <div className="flex gap-3 w-full sm:w-auto">
+              <select
+                value={statusFilter}
+                onChange={(e) => {
+                  setPage(1);
+                  setStatusFilter(e.target.value);
+                }}
+                className="px-3 py-2 border border-[#DDD4C6] rounded-xl text-sm bg-[#FFFCF7]"
+              >
+                <option value="">All Statuses</option>
+                <option value="pending">Pending</option>
+                <option value="in-progress">In Progress</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="partially-delivered">Partially Delivered</option>
+                <option value="delivered">Delivered</option>
+              </select>
 
-            <Link
-              href="/staff/new-order"
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition text-sm"
-            >
-              + New Order
-            </Link>
+              <Link
+                href="/staff/new-order"
+                className="px-4 py-2 bg-[#9A3412] text-white rounded-xl hover:bg-[#7C2D12] transition text-sm font-semibold whitespace-nowrap"
+              >
+                + New Order
+              </Link>
+            </div>
           </div>
+
+          <form onSubmit={applySearch} className="flex gap-3 max-w-xs">
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Search by book name or NIT"
+              className="w-full px-3 py-2 border border-[#DDD4C6] rounded-xl bg-[#FFFCF7] text-sm focus:outline-none focus:ring-2 focus:ring-[#9A3412]/30 focus:border-[#9A3412]"
+            />
+            <button
+              type="submit"
+              className="px-4 py-2 bg-[#1F1A16] text-white rounded-xl text-sm font-semibold hover:bg-black transition whitespace-nowrap"
+            >
+              Search
+            </button>
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchInput("");
+                  setSearchQuery("");
+                  setPage(1);
+                }}
+                className="px-4 py-2 border border-[#DDD4C6] rounded-xl text-sm bg-[#FFFCF7]"
+              >
+                Clear
+              </button>
+            )}
+          </form>
         </div>
 
-        {/* Orders Grid */}
         {orders.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-sm p-8 text-center">
-            <p className="text-gray-500">No orders found.</p>
+          <div className="bg-[#FFFCF7] rounded-2xl border border-[#DDD4C6] shadow-sm p-8 text-center">
+            <p className="text-[#6B6258]">No orders found.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {orders.map((order) => (
               <div
                 key={order._id}
-                className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition flex flex-col justify-between"
+                className="bg-[#FFFCF7] rounded-2xl border border-[#DDD4C6] shadow-sm p-6 hover:shadow-md transition flex flex-col justify-between"
               >
                 <div>
                   <div className="flex justify-between items-start gap-3 mb-3">
@@ -314,32 +335,32 @@ export default function StaffDashBoard() {
                         order.status,
                       )}`}
                     >
-                      {order.status}
+                      {order.status.replace(/-/g, " ")}
                     </span>
                   </div>
 
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-[#6B6258]">
                     NIT: {order.businessNIT}
                   </p>
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className="text-sm text-[#6B6258] mt-1">
                     Qty: {order.specifications.quantity} | Binding:{" "}
                     {order.specifications.bindingType}
                   </p>
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className="text-sm text-[#6B6258] mt-1">
                     Created: {new Date(order.createdAt).toLocaleDateString()}
                   </p>
 
                   {order.quote?.totalPrice && (
-                    <p className="mt-3 text-sm font-medium text-gray-700">
+                    <p className="mt-3 text-sm font-medium">
                       Quote: ${order.quote.totalPrice.toLocaleString()}
                     </p>
                   )}
                 </div>
 
-                <div className="mt-4 pt-3 border-t">
+                <div className="mt-4 pt-3 border-t border-[#DDD4C6]">
                   <Link
                     href={`/staff/orders/${order._id}`}
-                    className="text-sm text-blue-600 hover:underline"
+                    className="text-sm font-medium text-[#9A3412] hover:underline"
                   >
                     View Details →
                   </Link>
@@ -349,25 +370,24 @@ export default function StaffDashBoard() {
           </div>
         )}
 
-        {/* Pagination */}
         {totalPages > 1 && (
           <div className="mt-6 flex items-center justify-center gap-4">
             <button
               onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
               disabled={page === 1}
-              className="px-4 py-2 border rounded-lg text-sm disabled:opacity-50 bg-white"
+              className="px-4 py-2 border border-[#DDD4C6] rounded-xl text-sm disabled:opacity-50 bg-[#FFFCF7]"
             >
               Previous
             </button>
 
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-[#6B6258]">
               Page {page} of {totalPages}
             </span>
 
             <button
               onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
               disabled={page === totalPages}
-              className="px-4 py-2 border rounded-lg text-sm disabled:opacity-50 bg-white"
+              className="px-4 py-2 border border-[#DDD4C6] rounded-xl text-sm disabled:opacity-50 bg-[#FFFCF7]"
             >
               Next
             </button>

@@ -1,3 +1,4 @@
+// app/profile/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -16,6 +17,12 @@ interface UserProfile {
   businessNIT?: string;
 }
 
+const inputClass =
+  "w-full px-3 py-2 border border-[#DDD4C6] rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#9A3412]/30 focus:border-[#9A3412]";
+
+const disabledClass =
+  "w-full px-3 py-2 border border-[#DDD4C6] rounded-xl bg-[#E8DFD0] text-[#6B6258]";
+
 export default function ProfilePage() {
   const router = useRouter();
 
@@ -26,13 +33,11 @@ export default function ProfilePage() {
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
-  // Profile form
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [businessName, setBusinessName] = useState("");
 
-  // Password form
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -110,7 +115,6 @@ export default function ProfilePage() {
 
       setProfile(result.data);
 
-      // Keep localStorage user in sync
       const storedUser = localStorage.getItem("user");
       if (storedUser) {
         const parsed = JSON.parse(storedUser);
@@ -235,7 +239,7 @@ export default function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-[#F4EFE6] text-[#1F1A16]">
         <p className="text-lg">Loading profile...</p>
       </div>
     );
@@ -243,26 +247,30 @@ export default function ProfilePage() {
 
   if (!profile) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-lg text-red-500">Unable to load profile.</p>
+      <div className="min-h-screen flex items-center justify-center bg-[#F4EFE6]">
+        <p className="text-lg text-red-600">Unable to load profile.</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
+    <div className="min-h-screen bg-[#F4EFE6] text-[#1F1A16]">
+      <header className="sticky top-0 z-10 bg-[#FFFCF7]/90 border-b border-[#DDD4C6] backdrop-blur-sm">
         <div className="max-w-3xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div>
-            <h1 className="text-xl font-bold">Account Settings</h1>
-            <p className="text-sm text-gray-500">
-              {profile.email} ({profile.role})
-            </p>
+          <div className="flex items-center gap-3">
+            <span className="h-8 w-8 rounded-lg bg-[#9A3412] text-white grid place-items-center text-sm font-bold">
+              B
+            </span>
+            <div>
+              <h1 className="text-xl font-semibold">Account Settings</h1>
+              <p className="text-sm text-[#6B6258]">
+                {profile.email} ({profile.role})
+              </p>
+            </div>
           </div>
           <Link
             href={getDashboardLink()}
-            className="text-sm text-blue-600 hover:underline"
+            className="text-sm font-medium text-[#9A3412] hover:underline"
           >
             ← Back to Dashboard
           </Link>
@@ -270,8 +278,7 @@ export default function ProfilePage() {
       </header>
 
       <main className="max-w-3xl mx-auto px-4 py-8 space-y-6">
-        {/* Personal Details */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="bg-[#FFFCF7] rounded-2xl border border-[#DDD4C6] shadow-sm p-6">
           <h2 className="text-lg font-semibold mb-4">Personal Details</h2>
 
           <div className="space-y-4">
@@ -281,7 +288,7 @@ export default function ProfilePage() {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={inputClass}
               />
             </div>
 
@@ -291,9 +298,9 @@ export default function ProfilePage() {
                 type="email"
                 value={profile.email}
                 disabled
-                className="w-full px-3 py-2 border rounded-lg bg-gray-100 text-gray-500"
+                className={disabledClass}
               />
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-[#6B6258] mt-1">
                 Email cannot be changed
               </p>
             </div>
@@ -307,7 +314,7 @@ export default function ProfilePage() {
                   type="text"
                   value={profile.businessNIT}
                   disabled
-                  className="w-full px-3 py-2 border rounded-lg bg-gray-100 text-gray-500"
+                  className={disabledClass}
                 />
               </div>
             )}
@@ -320,7 +327,7 @@ export default function ProfilePage() {
                 type="text"
                 value={businessName}
                 onChange={(e) => setBusinessName(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={inputClass}
               />
             </div>
 
@@ -330,7 +337,7 @@ export default function ProfilePage() {
                 type="text"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={inputClass}
               />
             </div>
 
@@ -340,22 +347,21 @@ export default function ProfilePage() {
                 type="text"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={inputClass}
               />
             </div>
 
             <button
               onClick={handleUpdateProfile}
               disabled={isSavingProfile}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              className="px-4 py-2 bg-[#9A3412] text-white rounded-xl font-semibold hover:bg-[#7C2D12] disabled:opacity-50"
             >
               {isSavingProfile ? "Saving..." : "Save Profile"}
             </button>
           </div>
         </div>
 
-        {/* Change Password */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="bg-[#FFFCF7] rounded-2xl border border-[#DDD4C6] shadow-sm p-6">
           <h2 className="text-lg font-semibold mb-4">Change Password</h2>
 
           <div className="space-y-4">
@@ -367,7 +373,7 @@ export default function ProfilePage() {
                 type="password"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={inputClass}
               />
             </div>
 
@@ -379,7 +385,7 @@ export default function ProfilePage() {
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={inputClass}
               />
             </div>
 
@@ -391,26 +397,25 @@ export default function ProfilePage() {
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={inputClass}
               />
             </div>
 
             <button
               onClick={handleUpdatePassword}
               disabled={isSavingPassword}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              className="px-4 py-2 bg-[#9A3412] text-white rounded-xl font-semibold hover:bg-[#7C2D12] disabled:opacity-50"
             >
               {isSavingPassword ? "Updating..." : "Update Password"}
             </button>
           </div>
         </div>
 
-        {/* Delete Account */}
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-red-100">
-          <h2 className="text-lg font-semibold mb-2 text-red-600">
+        <div className="bg-[#FFFCF7] rounded-2xl shadow-sm p-6 border border-red-200">
+          <h2 className="text-lg font-semibold mb-2 text-red-700">
             Delete Account
           </h2>
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-[#6B6258] mb-4">
             This will permanently delete your account. This action cannot be
             undone.
           </p>
@@ -418,7 +423,7 @@ export default function ProfilePage() {
           <button
             onClick={handleDeleteAccount}
             disabled={isDeleting}
-            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50"
+            className="px-4 py-2 bg-[#B91C1C] text-white rounded-xl font-semibold hover:bg-[#991B1B] disabled:opacity-50"
           >
             {isDeleting ? "Deleting..." : "Delete My Account"}
           </button>

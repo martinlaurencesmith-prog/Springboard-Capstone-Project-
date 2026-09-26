@@ -1,5 +1,4 @@
 // app/client/dashboard/page.tsx
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -78,53 +77,56 @@ export default function ClientDashboard() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "pending":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-amber-100 text-amber-800";
       case "in-progress":
-        return "bg-blue-100 text-blue-800";
+        return "bg-sky-100 text-sky-800";
       case "completed":
-        return "bg-green-100 text-green-800";
+        return "bg-indigo-100 text-indigo-800";
       case "cancelled":
         return "bg-red-100 text-red-800";
       case "partially-delivered":
-        return "bg-purple-100 text-purple-800";
+        return "bg-violet-100 text-violet-800";
       case "delivered":
-        return "bg-green-100 text-green-800";
+        return "bg-emerald-100 text-emerald-800";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-[#E8DFD0] text-[#1F1A16]";
     }
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-[#F4EFE6] text-[#1F1A16]">
         <p className="text-lg">Loading your orders...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
+    <div className="min-h-screen bg-[#F4EFE6] text-[#1F1A16]">
+      <header className="sticky top-0 z-10 bg-[#FFFCF7]/90 border-b border-[#DDD4C6] backdrop-blur-sm">
         <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div>
-            <h1 className="text-xl font-bold">BindFlow</h1>
-            <p className="text-sm text-gray-500">
-              Welcome, {user?.name || "Client"}
-            </p>
+          <div className="flex items-center gap-3">
+            <span className="h-8 w-8 rounded-lg bg-[#9A3412] text-white grid place-items-center text-sm font-bold">
+              B
+            </span>
+            <div>
+              <h1 className="text-xl font-semibold">BindFlow</h1>
+              <p className="text-sm text-[#6B6258]">
+                Welcome, {user?.name || "Client"}
+              </p>
+            </div>
           </div>
 
           <div className="flex items-center gap-3">
             <Link
               href="/profile"
-              className="text-sm text-blue-600 hover:underline"
+              className="text-sm font-medium text-[#9A3412] hover:underline"
             >
               Profile
             </Link>
-
             <button
               onClick={handleLogout}
-              className="px-4 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600"
+              className="px-4 py-2 text-sm font-semibold bg-[#B91C1C] text-white rounded-xl hover:bg-[#991B1B] transition"
             >
               Logout
             </button>
@@ -132,31 +134,34 @@ export default function ClientDashboard() {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="max-w-6xl mx-auto px-4 py-8">
-        <h2 className="text-2xl font-bold mb-6">My Orders</h2>
+        <h2 className="text-2xl font-semibold mb-6">My Orders</h2>
 
         {orders.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-sm p-8 text-center">
-            <p className="text-gray-500">You don’t have any orders yet.</p>
+          <div className="bg-[#FFFCF7] rounded-2xl border border-[#DDD4C6] shadow-sm p-12 text-center">
+            <p className="text-lg font-medium">No jobs yet</p>
+            <p className="text-sm text-[#6B6258] mt-1">
+              When the shop creates an order under your NIT, it will show up
+              here.
+            </p>
           </div>
         ) : (
           <div className="grid gap-4">
             {orders.map((order) => (
               <div
                 key={order._id}
-                className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition"
+                className="bg-[#FFFCF7] rounded-2xl border border-[#DDD4C6] shadow-sm p-6 hover:shadow-md transition"
               >
-                <div className="flex justify-between items-start">
+                <div className="flex justify-between items-start gap-4">
                   <div>
                     <h3 className="text-lg font-semibold">
                       {order.book.identification}
                     </h3>
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="text-sm text-[#6B6258] mt-1">
                       Quantity: {order.specifications.quantity} | Binding:{" "}
                       {order.specifications.bindingType}
                     </p>
-                    <p className="text-sm text-gray-400 mt-1">
+                    <p className="text-sm text-[#6B6258] mt-1">
                       Created: {new Date(order.createdAt).toLocaleDateString()}
                     </p>
                   </div>
@@ -167,12 +172,11 @@ export default function ClientDashboard() {
                         order.status,
                       )}`}
                     >
-                      {order.status}
+                      {order.status.replace(/-/g, " ")}
                     </span>
-
                     <Link
                       href={`/client/orders/${order._id}`}
-                      className="text-sm text-blue-600 hover:underline"
+                      className="text-sm font-medium text-[#9A3412] hover:underline"
                     >
                       View Details →
                     </Link>
@@ -180,7 +184,7 @@ export default function ClientDashboard() {
                 </div>
 
                 {order.quote?.totalPrice && (
-                  <p className="mt-3 text-sm font-medium text-gray-700">
+                  <p className="mt-3 text-sm font-medium">
                     Quote: ${order.quote.totalPrice.toLocaleString()}
                   </p>
                 )}

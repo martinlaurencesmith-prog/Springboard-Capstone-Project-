@@ -1,4 +1,4 @@
-//app/staff/new-order/page.tsx
+// app/staff/new-order/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -25,7 +25,6 @@ const orderSchema = z.object({
     "softbound",
     "other",
   ]),
-
   spiralColor: z
     .enum([
       "black",
@@ -40,11 +39,14 @@ const orderSchema = z.object({
       "custom",
     ])
     .optional(),
-
   additionalNotes: z.string().optional(),
 });
 
 type OrderFormData = z.infer<typeof orderSchema>;
+
+const inputClass =
+  "w-full px-3 py-2 border border-[#DDD4C6] rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#9A3412]/30 focus:border-[#9A3412]";
+
 export default function NewOrderPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -92,7 +94,6 @@ export default function NewOrderPage() {
             identification: data.bookIdentification,
             coverImage: data.coverImage || "",
           },
-
           specifications: {
             quantity: data.quantity,
             spiralLength: data.spiralLength,
@@ -117,53 +118,52 @@ export default function NewOrderPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-
-      <header className="bg-white shadow-sm">
+    <div className="min-h-screen bg-[#F4EFE6] text-[#1F1A16]">
+      <header className="sticky top-0 z-10 bg-[#FFFCF7]/90 border-b border-[#DDD4C6] backdrop-blur-sm">
         <div className="max-w-3xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div>
-            <h1>Create New Order</h1>
-            <p>
-              Logged in as {user?.name} ({user?.role})
-            </p>
+          <div className="flex items-center gap-3">
+            <span className="h-8 w-8 rounded-lg bg-[#9A3412] text-white grid place-items-center text-sm font-bold">
+              B
+            </span>
+            <div>
+              <h1 className="text-xl font-semibold">Create New Order</h1>
+              <p className="text-sm text-[#6B6258]">
+                Logged in as {user?.name} ({user?.role})
+              </p>
+            </div>
           </div>
 
           <Link
             href="/staff/dashboard"
-            className="text-sm text-blue-600 hover:underline"
+            className="text-sm font-medium text-[#9A3412] hover:underline"
           >
             Back to Orders
           </Link>
         </div>
       </header>
 
-      {/* Form Section */}
-
       <main className="max-w-3xl mx-auto px-4 py-8">
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="bg-white rounded-xl shadow-sm p-6 space-y-5"
+          className="bg-[#FFFCF7] rounded-2xl border border-[#DDD4C6] shadow-sm p-6 space-y-5"
         >
-          {/* Business NIT  */}
-
           <div>
             <label className="block text-sm font-medium mb-1">
-              Business NIT*
+              Business NIT *
             </label>
             <input
               type="text"
               {...register("businessNIT")}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputClass}
               placeholder="900123456"
-            />{" "}
+            />
             {errors.businessNIT && (
-              <p className="text-red-500 text-sm mt-1">
+              <p className="text-red-600 text-sm mt-1">
                 {errors.businessNIT.message}
               </p>
             )}
           </div>
-          {/* Business Name  */}
+
           <div>
             <label className="block text-sm font-medium mb-1">
               Business Name *
@@ -171,17 +171,16 @@ export default function NewOrderPage() {
             <input
               type="text"
               {...register("businessName")}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputClass}
               placeholder="My Print Shop"
             />
             {errors.businessName && (
-              <p className="text-red-500 text-sm mt-1">
+              <p className="text-red-600 text-sm mt-1">
                 {errors.businessName.message}
               </p>
             )}
           </div>
 
-          {/* Book Identification */}
           <div>
             <label className="block text-sm font-medium mb-1">
               Book / Job Identification *
@@ -189,17 +188,15 @@ export default function NewOrderPage() {
             <input
               type="text"
               {...register("bookIdentification")}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputClass}
               placeholder="Harry Potter - Chamber of Secrets"
             />
             {errors.bookIdentification && (
-              <p className="text-red-500 text-sm mt-1">
+              <p className="text-red-600 text-sm mt-1">
                 {errors.bookIdentification.message}
               </p>
             )}
           </div>
-
-          {/* Cover Image URL (Optional) */}
 
           <div>
             <label className="block text-sm font-medium mb-1">
@@ -208,26 +205,24 @@ export default function NewOrderPage() {
             <input
               type="text"
               {...register("coverImage")}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputClass}
               placeholder="https://example.com/cover.jpg"
             />
           </div>
 
-          {/* Quantity + Spiral Length  */}
-
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">
-                Quantity*
+                Quantity *
               </label>
               <input
                 type="number"
                 {...register("quantity", { valueAsNumber: true })}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={inputClass}
                 placeholder="100"
               />
               {errors.quantity && (
-                <p className="text-red-500 text-sm mt-1">
+                <p className="text-red-600 text-sm mt-1">
                   {errors.quantity.message}
                 </p>
               )}
@@ -241,18 +236,17 @@ export default function NewOrderPage() {
                 type="number"
                 step="0.01"
                 {...register("spiralLength", { valueAsNumber: true })}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={inputClass}
                 placeholder="28"
               />
               {errors.spiralLength && (
-                <p className="text-red-500 text-sm mt-1">
+                <p className="text-red-600 text-sm mt-1">
                   {errors.spiralLength.message}
                 </p>
               )}
             </div>
           </div>
 
-          {/* Sheets per Book */}
           <div>
             <label className="block text-sm font-medium mb-1">
               Sheets per Book (Optional)
@@ -260,20 +254,16 @@ export default function NewOrderPage() {
             <input
               type="number"
               {...register("sheetsPerBook", { valueAsNumber: true })}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputClass}
               placeholder="120"
             />
           </div>
 
-          {/* Binding Type */}
           <div>
             <label className="block text-sm font-medium mb-1">
               Binding Type *
             </label>
-            <select
-              {...register("bindingType")}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
+            <select {...register("bindingType")} className={inputClass}>
               <option value="">Select binding type</option>
               <option value="metallic">Metallic</option>
               <option value="plastic">Plastic</option>
@@ -283,21 +273,17 @@ export default function NewOrderPage() {
               <option value="other">Other</option>
             </select>
             {errors.bindingType && (
-              <p className="text-red-500 text-sm mt-1">
+              <p className="text-red-600 text-sm mt-1">
                 {errors.bindingType.message}
               </p>
             )}
           </div>
 
-          {/* Spiral Color */}
           <div>
             <label className="block text-sm font-medium mb-1">
               Spiral Color (Optional)
             </label>
-            <select
-              {...register("spiralColor")}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
+            <select {...register("spiralColor")} className={inputClass}>
               <option value="">Select color</option>
               <option value="black">Black</option>
               <option value="white">White</option>
@@ -312,7 +298,6 @@ export default function NewOrderPage() {
             </select>
           </div>
 
-          {/* Additional Notes */}
           <div>
             <label className="block text-sm font-medium mb-1">
               Additional Notes (Optional)
@@ -320,16 +305,15 @@ export default function NewOrderPage() {
             <textarea
               {...register("additionalNotes")}
               rows={3}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputClass}
               placeholder="Any special instructions..."
             />
           </div>
-          {/* Submit Button  */}
 
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+            className="w-full bg-[#9A3412] text-white py-2.5 rounded-xl font-semibold hover:bg-[#7C2D12] transition disabled:opacity-50"
           >
             {isLoading ? "Creating Order" : "Create Order"}
           </button>
